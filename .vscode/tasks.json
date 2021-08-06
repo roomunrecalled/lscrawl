@@ -1,0 +1,22 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Run Lua Script",
+            "type": "shell",
+            "command": "lua5.1",
+            "args": [
+                "${file}"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "options": {
+                "env": { "LUA_PATH": "${workspaceFolder}\\?.lua"}
+            }
+        }
+    ]
+}
