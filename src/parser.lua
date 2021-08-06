@@ -8,11 +8,7 @@ local C, Cf, Cg, Ct = lpeg.C, lpeg.Cf, lpeg.Cg, lpeg.Ct
 
 local expression = P({
     "expression",
-		expression = V("math_expr") + V("logic_expr"),
-    --expression = V("math_expr") + V("logic_expr") --[[+ V("parens_expr")]],
-    --expression = V("binary_expr"),
-    --binary_expr = Ct(V("value") * (def_.token.binaryOp * V("value")) ^ 0) / func_.flatten_or_addLabel("expr"),
-    --value = def_.token.unaryValue + def_.token.value,
+		expression = V("logic_expr") + V("math_expr"),
 		math_expr = Cf(V("multdiv_expr") * ((def_.token.asOp * V("multdiv_expr")) ^ 1), func_.concatConsecutiveOps) +
 								 V("multdiv_expr"),
 		multdiv_expr = Cf(V("factor") * ((def_.token.mdOp * V("factor")) ^ 1), func_.concatConsecutiveOps) +
@@ -22,9 +18,10 @@ local expression = P({
 						 def_.token.number +
 						 def_.token.label,
     logic_expr = Cf(V("fact") * ((def_.token.binaryTritOp * V("fact")) ^ 1), func_.concatConsecutiveOps) +
-								 (V("math_expr") * def_.token.comparisonTritOp * V("math_expr")) / func_.reorderOp +
+								 --(V("math_expr") * def_.token.comparisonTritOp * V("math_expr")) / func_.reorderOp +
 								 V("fact"),
 		fact = (def_.token.lParen * V("logic_expr") * def_.token.rParen) +
+					 (V("math_expr") * def_.token.comparisonTritOp * V("math_expr") / func_.reorderOp) +
 					 (def_.token.unaryTritOp * V("fact")) / func_.addUnaryLabel +
 					 def_.token.fact +
 					 def_.token.label,
@@ -66,9 +63,8 @@ end
 test = lpeg.match(parser, [[
 abc
 def
-~ bool = false && true
+~ bool = !(3 < 5) && (2 + 45 < 3 || [+> unknown)
 ]])
-test = lpeg.match(expression, "false && true")
 --~ abc = 3 + 3 * -(-45 + c) \ 5
 --~ def = true && false
 --~ ab = 50.3 + 3 * 1 + 2 \\ 4

@@ -38,6 +38,7 @@ end
 func_.reorderOp = function(left, op, right) return {op, left, right} end
 func_.concatConsecutiveOps = function(left, right)
 	local result
+	print("concatConsecutiveOps()")
 	print("left="..func_.deepPrint(left).."\nright="..func_.deepPrint(right))
 	if type(left) ~= "table" then
 		result = {right, left}
@@ -110,13 +111,13 @@ op.assign = lpeg.P("=")
 op.not_ = lpeg.P("!")
 op.andOr = lpeg.P("&&") + lpeg.P("||")
 -- glass half-full vs glass half-empty
--- [+> <trit> => true if true or unclear; false otherwise
+-- [+> <trit> => true if true or unknown; false otherwise
 -- [-> <trit> => true if true; false otherwise
 op.glass = lpeg.P("[+>") + lpeg.P("[->")
 -- true if both inputs are true; false if both inputs are false,
--- unclear otherwise
+-- unknown otherwise
 op.consensus = lpeg.P("<&>")
--- only unclear if both inputs are either unclear or conflict;
+-- only unknown if both inputs are either unknown or conflict with each other;
 -- pick any other option otherwise
 op.assume = lpeg.P("<|>")
 op.ltGt = lpeg.S("<>")
@@ -138,8 +139,8 @@ def_.literal = {}
 local literal = def_.literal
 literal.true_ = lpeg.P("true")
 literal.false_ = lpeg.P("false")
-literal.unclear_ = lpeg.P("unclear")
-literal.fact = lpeg.C(literal.true_ + literal.false_ + literal.unclear_)
+literal.unknown = lpeg.P("unknown")
+literal.fact = lpeg.C(literal.true_ + literal.false_ + literal.unknown)
 
 literal.integer = (char.digit ^1)
 literal.float = (char.digit ^0 * lpeg.S(".") * char.digit ^1)
@@ -149,11 +150,12 @@ def_.token = {}
 -- logical tokens
 local token = def_.token
 token.local_ = lpeg.P("local")
-token.label = chunk.lSpace * lpeg.C((char.letter + lpeg.S("_")) ^1)
+token.label = (chunk.lSpace * lpeg.C((char.letter + lpeg.S("_")) ^1)) -
+	(chunk.lSpace * literal.fact + literal.number)
 token.lPrefix = chunk.lSpace * char.tilde_
 
-token.comparisonTritOp = chunk.lSpace + lpeg.C(op.lteGte + op.ltGt + op.ne + op.eq)
-token.binaryTritOp = chunk.lSpace + lpeg.C(op.andOr + op.consensus + op.assume)
+token.comparisonTritOp = chunk.lSpace * lpeg.C(op.lteGte + op.ltGt + op.ne + op.eq)
+token.binaryTritOp = chunk.lSpace * lpeg.C(op.andOr + op.consensus + op.assume)
 token.unaryTritOp = chunk.lSpace * lpeg.C(op.glass + op.not_)
 token.mdOp = chunk.lSpace * lpeg.C(op.multDiv)
 token.asOp = chunk.lSpace * lpeg.C(op.addSub)
